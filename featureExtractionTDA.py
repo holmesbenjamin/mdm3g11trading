@@ -224,6 +224,6 @@ for i in range(num_windows):
     feature_vectors.append(features)
 
 features_df = pd.DataFrame(feature_vectors).dropna().reset_index(drop=True)
-print("Sample extracted features:")
+print("sample extracted features:")
 print(features_df.columns)
 print(features_df.head())
