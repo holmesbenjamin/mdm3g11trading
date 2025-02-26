@@ -227,3 +227,51 @@ features_df = pd.DataFrame(feature_vectors).dropna().reset_index(drop=True)
 print("sample extracted features:")
 print(features_df.columns)
 print(features_df.head())
+
+# --- Feature Descriptions ---
+    # window_mid_date: Middle date of the current sliding window.
+    # wasserstein_distance: Wasserstein distance between consecutive H1 persistence diagrams,
+    #    indicating how much the topological structure changes from the previous window.
+    #
+    # TDA features from the H1 persistence diagram (loops in the data):
+    #   - num_features_H1: Number of loop features detected.
+    #   - total_persistence_H1: Sum of the lifetimes (death - birth) of the loop features.
+    #   - mean_persistence_H1: Average lifetime of the loop features.
+    #   - max_persistence_H1: Maximum lifetime among the loop features.
+    #   - persistence_entropy_H1: Entropy of the lifetimes distribution (a measure of complexity).
+    #   - median_persistence_H1: Median lifetime of the loop features.
+    #   - std_persistence_H1: Standard deviation of the loop lifetimes.
+    #   - weighted_entropy_H1: Entropy weighted by the squared lifetimes.
+    #
+    # Betti curve summary features:
+    #   - betti_mean: Mean number of features (loops) over the grid.
+    #   - betti_max: Maximum number of features at any point on the grid.
+    #   - betti_auc: Area under the Betti curve, summarizing the overall topological complexity.
+    #
+    # Landscape features from the persistence landscape of H1:
+    #   - l1_norm: L1 norm of the landscape, capturing the total magnitude.
+    #   - l2_norm: L2 norm of the landscape, emphasizing larger landscape values.
+    #   - max_landscape: Maximum value in the landscape.
+    #   - mean_landscape: Mean value of the landscape.
+    #   - std_landscape: Standard deviation of the landscape values.
+    #
+    # Intrinsic time series features:
+    #   - avg_rolling_mean: Average of the rolling mean of log prices (trend indicator).
+    #   - avg_rolling_std: Average of the rolling standard deviation of log prices (volatility).
+    #   - avg_momentum: Average momentum, measuring price changes over the window.
+    #   - avg_ema: Average exponential moving average, smoothing the price series.
+    #   - avg_rsi: Average Relative Strength Index, indicating overbought/oversold conditions.
+    #   - avg_macd_hist: Average Moving average convergence/divergence (MACD) histogram, reflecting momentum shifts.
+    #   - avg_bb_width: Average Bollinger Band width, another volatility measure.
+    #   - avg_roc: Average Rate of Change of the log prices.
+    #   - avg_stochastic: Average stochastic oscillator value, for momentum analysis.
+    #   - avg_day_of_week: Average day-of-week value (0=Monday,...,6=Sunday), which can capture weekly seasonality.
+    #   - avg_month: Average month, capturing seasonal trends.
+    #   - avg_lag1_return: Average return with a one-period lag.
+    #   - avg_lag2_return: Average return with a two-period lag.
+    #   - skewness: Average skewness of the returns distribution, indicating asymmetry.
+    #   - kurtosis: Average kurtosis of the returns distribution, indicating tail heaviness.
+    #
+    # Additional features:
+    #   - num_features_H0: Number of H0 features (connected components) from the persistence diagram.
+    #   - raw_return: The raw log price return following the current window.
