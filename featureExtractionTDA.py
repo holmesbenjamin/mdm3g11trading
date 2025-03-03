@@ -238,15 +238,15 @@ print(features_df.head())
     #   - total_persistence_H1: Sum of the lifetimes (death - birth) of the loop features.
     #   - mean_persistence_H1: Average lifetime of the loop features.
     #   - max_persistence_H1: Maximum lifetime among the loop features.
-    #   - persistence_entropy_H1: Entropy of the lifetimes distribution (a measure of complexity).
+    #   - persistence_entropy_H1: Entropy of the lifetimes distribution (a measure of complexity). 
     #   - median_persistence_H1: Median lifetime of the loop features.
     #   - std_persistence_H1: Standard deviation of the loop lifetimes.
-    #   - weighted_entropy_H1: Entropy weighted by the squared lifetimes.
+    #   - weighted_entropy_H1: Entropy weighted by the squared lifetimes. - App this is intresting 
     #
     # Betti curve summary features:
-    #   - betti_mean: Mean number of features (loops) over the grid.
-    #   - betti_max: Maximum number of features at any point on the grid.
-    #   - betti_auc: Area under the Betti curve, summarizing the overall topological complexity.
+    #   - betti_mean: Mean number of features (loops) over the grid. - Ta says this is useless 
+    #   - betti_max: Maximum number of features at any point on the grid. -
+    #   - betti_auc: Area under the Betti curve, summarizing the overall topological complexity. - Also useless 
     #
     # Landscape features from the persistence landscape of H1:
     #   - l1_norm: L1 norm of the landscape, capturing the total magnitude.
@@ -269,7 +269,7 @@ print(features_df.head())
     #   - avg_month: Average month, capturing seasonal trends.
     #   - avg_lag1_return: Average return with a one-period lag.
     #   - avg_lag2_return: Average return with a two-period lag.
-    #   - skewness: Average skewness of the returns distribution, indicating asymmetry.
+    #   - skewness: Average skewness of the returns distribution, indicating asymmetry.  - need to make sure this is price change 
     #   - kurtosis: Average kurtosis of the returns distribution, indicating tail heaviness.
     #
     # Additional features:
