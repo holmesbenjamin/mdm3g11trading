@@ -247,6 +247,7 @@ print(features_df.head())
     #   - betti_mean: Mean number of features (loops) over the grid. - Ta says this is useless 
     #   - betti_max: Maximum number of features at any point on the grid. -
     #   - betti_auc: Area under the Betti curve, summarizing the overall topological complexity. - Also useless 
+    #   - TA says to use each point on the betti curve as a bunch of features
     #
     # Landscape features from the persistence landscape of H1:
     #   - l1_norm: L1 norm of the landscape, capturing the total magnitude.
