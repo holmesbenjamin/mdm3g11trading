@@ -4,6 +4,7 @@ import matplotlib.dates as mdates
 import numpy as np
 from collections import OrderedDict 
 from arch.bootstrap import StationaryBootstrap
+from scipy.stats import ks_2samp
 
 # Set the working commodity
 working_commodity = "BRENT CRUDE"
@@ -16,17 +17,17 @@ commodities = df.columns
 commodity_px = df[working_commodity]
 commodity_px = commodity_px.dropna()
 
-# def prices_to_returns(prices):
-#     # Converts raw prices to returns
-#     return prices.pct_change()
+def prices_to_returns(prices):
+    # Converts raw prices to returns
+    return np.log(prices / prices.shift(1))
 
-# commodity_returns = prices_to_returns(commodity_px)
+commodity_returns = prices_to_returns(commodity_px)
 
-commodity_returns = commodity_px.pct_change()
-
-def returns_to_prices(returns, initial_value=1):
+def returns_to_prices(returns, intial_value=1):
     # convert returns to a price series, starting at an (optional) given value
-    return (1 + returns).cumprod() * initial_value
+    # return (1 + returns).cumprod() * intial_value
+    log_price = returns.cumsum() + np.log(intial_value)
+    return np.exp(log_price)
 
 def generate_stationary_bootstrap_sample(stationary_time_series: pd.Series, num_samples: int = 1, seed: int = 0) -> pd.DataFrame:
     # Generate sample data from a stationary time-series using the block boostrapping method of Politis & Romano
@@ -46,7 +47,7 @@ commodity_returns_samples = generate_stationary_bootstrap_sample(commodity_retur
 
 
 commodity_initial_px = commodity_px.values[0]
-commodity_px_samples = commodity_returns_samples.apply(lambda s: returns_to_prices(s, commodity_initial_px))
+commodity_px_samples = returns_to_prices(commodity_returns_samples, commodity_initial_px)
 
 ax = commodity_px_samples.plot(figsize=(20, 4))
 ax = commodity_px.plot(figsize=(20, 4), ax=ax, linestyle="--", color='k', label=working_commodity)
