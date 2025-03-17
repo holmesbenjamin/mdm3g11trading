@@ -17,7 +17,7 @@ def main():
     # --- Step 1: Bootstrap the prices of a commodity --- #
 
     # Set the number of bootstrap samples
-    num_bootstrap_samples = 50
+    num_bootstrap_samples = 10
 
     # Extract the prices and returns of the selected commodity
     commodity_px = bsp.close_price_extraction(working_commodity)
