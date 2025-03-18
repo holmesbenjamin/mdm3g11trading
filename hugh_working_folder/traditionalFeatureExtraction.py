@@ -4,8 +4,8 @@ import tsfresh as tsf
 from tsfresh.utilities.dataframe_functions import roll_time_series
 from tsfresh.feature_extraction.settings import ComprehensiveFCParameters
 
-# List of features to be used
 
+# --- FEATURE LIST --- #
 fc_parameters = {
 # Statistical Summary Features
 "mean": None,
@@ -35,6 +35,11 @@ fc_parameters = {
 "mean_second_derivative_central": None,
 "autocorrelation": [{"lag": 1}]
 }
+# --- FEATURE LIST --- #
+
+
+
+
 
 def create_tsfresh_flat_dataframe(series: pd.Series, id: str) -> pd.DataFrame:
     df = pd.DataFrame({'id': id, 'time': series.index, 'x': series, 'y': np.sign(series.shift(-1))}).dropna(how='any', axis=0).reset_index(drop=True)
@@ -71,10 +76,3 @@ def roll_and_extract(df, working_days):
     # print(y)
 
     return X, y
-
-
-
-
-    
-    
-

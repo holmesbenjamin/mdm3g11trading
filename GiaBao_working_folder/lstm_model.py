@@ -80,7 +80,7 @@ def plot_metrics(history, y_test, y_pred_classes):
     plt.show()
 
 def main():
-    df = pd.read_csv('mdm3g11trading/commodity_futures.csv')
+    df = pd.read_csv('commodity_futures.csv')
     df['Date'] = pd.to_datetime(df['Date'], dayfirst=True)
     commodity = 'GOLD'
     
@@ -153,7 +153,7 @@ def main():
     history = model.fit(
         X_train, y_train,
         validation_split=0.2,
-        epochs=50,
+        epochs=10,
         batch_size=32
     )
     
