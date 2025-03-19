@@ -8,7 +8,7 @@ from scipy.stats import linregress
 
 df = pd.read_csv("commodity_futures.csv", parse_dates=["Date"])
 df.set_index("Date", inplace=True)
-commodity = 'WTI CRUDE'
+commodity = 'BRENT CRUDE'
 data = df[commodity].dropna().values
 tau = 1
 timeframe_length = 90  # quarterly window (90 days)
@@ -132,7 +132,7 @@ for window_start in range(max_start):
     results.append(window_dict)
 
 df_combined = pd.DataFrame(results)
-df_combined.to_csv("combined_metrics_lists.csv", index=False)
+df_combined.to_csv("BRENTCRUDEcombined_metrics_lists.csv", index=False)
 
 #EXAMPLE
 
