@@ -9,6 +9,7 @@ from featuresFromCSV import (
     extract_stage_1, extract_stage_2, extract_stage_3, extract_stage_4
 )
 import ast
+import matplotlib.pyplot as plt
 
 # Function to handle object-type columns (extract values from lists and convert them to numeric)
 def handle_object_columns(df):
@@ -162,6 +163,29 @@ def main():
     print("\nFinal Results:")
     print(results_df)
 
+    # Plot for the mean metrics: Mean F1-Score, Mean Accuracy, and Mean Recall
+    plt.figure(figsize=(10, 5))
+    plt.plot(results_df["Feature Stage"], results_df["Mean F1-Score"], marker='o', label='Mean F1-Score')
+    plt.plot(results_df["Feature Stage"], results_df["Mean Accuracy"], marker='o', label='Mean Accuracy')
+    plt.plot(results_df["Feature Stage"], results_df["Mean Recall"], marker='o', label='Mean Recall')
+    plt.xlabel("Feature Stage")
+    plt.ylabel("Score")
+    plt.title("Mean Metrics per Feature Stage")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+    # Plot for the max metrics: Max F1-Score and Max Precision
+    plt.figure(figsize=(10, 5))
+    plt.plot(results_df["Feature Stage"], results_df["Max F1-Score"], marker='o', label='Max F1-Score')
+    plt.plot(results_df["Feature Stage"], results_df["Max Precision"], marker='o', label='Max Precision')
+    plt.xlabel("Feature Stage")
+    plt.ylabel("Score")
+    plt.title("Max Metrics per Feature Stage")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
 if __name__ == '__main__':
     main()
 
@@ -173,3 +197,4 @@ if __name__ == '__main__':
 #1       Stage 2       0.418874       0.529739      0.529739      0.548626       0.756901
 #2       Stage 3       0.484373       0.529217      0.529217      0.590832       0.606008
 #3       Stage 4       0.489744       0.532000      0.532000      0.586264       0.606008
+

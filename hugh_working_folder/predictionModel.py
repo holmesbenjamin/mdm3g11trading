@@ -8,9 +8,6 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
 from tsfresh.feature_extraction.feature_calculators import linear_trend_timewise, mean, kurtosis, skewness, set_property
-from Ben_working_folder.featuresFromCSV import (
-    extract_stage_1, extract_stage_2, extract_stage_3, extract_stage_4
-)
 
 def main():
     # --- Step 0: Set the working commodity and other constants --- #

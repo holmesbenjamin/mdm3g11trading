@@ -26,7 +26,7 @@ def handle_object_columns(df):
 
 def main():
     # --- Step 0: Set up constants --- #
-    working_commodity = "BRENT CRUDE"
+    working_commodity = "WTI CRUDE"
     num_bootstrap_samples = 10  # number of bootstrap samples
     
     # --- Step 1: Load commodity prices and compute returns --- #
