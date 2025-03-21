@@ -13,8 +13,20 @@ This repository contains Python code for performing Topological Data Analysis (T
 ```bash
 WTICRUDE,BRENTCRUDE,SOYBEANS,CORN,COPPER,SILVER,GOLD,ALUMINIUM,ZINC,NICKEL,WHEAT,SUGAR
 ```
-
-
+## Visualisation - Use this for consistent plots
+```bash
+from matplotlib import rcParams
+rcParams.update({
+    "text.usetex": False,  
+    "font.family": "serif",
+    "axes.labelsize": 20,
+    "xtick.labelsize": 20,
+    "ytick.labelsize": 20,
+    "legend.fontsize": 20,
+    "figure.titlesize": 0,
+    "axes.titlesize": 0,
+})
+```
 ## Installation
 
 Ensure you have Python 3.6 or above installed. Then, install the required packages using pip:
