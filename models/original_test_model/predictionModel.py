@@ -11,7 +11,7 @@ from tsfresh.feature_extraction.feature_calculators import linear_trend_timewise
 
 def main():
     # --- Step 0: Set the working commodity and other constants --- #
-    working_commodity = "BRENT CRUDE"
+    working_commodity = "WTI CRUDE"
     working_days = 260
 
     # --- Step 1: Bootstrap the prices of a commodity --- #
