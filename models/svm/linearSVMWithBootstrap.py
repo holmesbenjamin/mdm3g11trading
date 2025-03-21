@@ -1,4 +1,4 @@
-import bootstrapPrices as bsp
+import models.original_test_model.bootstrapPrices as bsp
 import matplotlib.pyplot as plt
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.svm import SVC
@@ -7,7 +7,7 @@ from sklearn.preprocessing import StandardScaler
 import pandas as pd
 import numpy as np
 import ast
-from featuresFromCSV import extract_stage_1, extract_stage_2, extract_stage_3, extract_stage_4
+from featureExtraction.featuresFromCSV import extract_stage_1, extract_stage_2, extract_stage_3, extract_stage_4
 
 # Function to process any object-type columns (as in your linear SVM script)
 def handle_object_columns(df):

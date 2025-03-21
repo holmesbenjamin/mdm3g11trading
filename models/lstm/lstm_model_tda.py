@@ -49,7 +49,7 @@ def plot_metrics(history, y_test, y_pred_classes):
     plt.show()
 
 def main():
-    df = pd.read_csv('mdm3g11trading/combined_metrics_lists.csv')
+    df = pd.read_csv('datasets/WTICRUDEcombined_metrics_lists.csv')
     
     feature_columns = [
         'mean', 'median', 'std', 'var', 'min', 'max', 'range',
