@@ -1,4 +1,4 @@
-import models.original_test_model.bootstrapPrices as bsp
+import models.old_models.bootstrapPrices as bsp
 import matplotlib.pyplot as plt
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.svm import SVC
