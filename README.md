@@ -12,7 +12,7 @@ This repository contains Python code for performing Topological Data Analysis (T
 ## Feature Datasets Generated {commodity}combined_metrics_lists.csv
 ```bash
 WTICRUDE,BRENTCRUDE,SOYBEANS,CORN,COPPER,SILVER,GOLD,ALUMINIUM,ZINC,NICKEL,WHEAT,SUGAR
-
+```
 
 
 ## Installation
