@@ -8,8 +8,12 @@ This repository contains Python code for performing Topological Data Analysis (T
 - **Sliding Window Analysis:** Constructs point clouds over a sliding window to capture the joint dynamics of the commodities.
 - **Persistent Homology:** Computes persistence diagrams for dimension 1 using `ripser`.
 - **Persistence Landscape:** Summarizes the topology via persistence landscapes and computes discrete L1 and L2 norms.
-- **Wasserstein Distance:** Quantifies the change between consecutive windows by calculating the Wasserstein distance between persistence diagrams.
-- **Visualisation:** Plots the evolution of the computed metrics over time, marking threshold levels for potential extreme events.
+
+## Feature Datasets Generated {commodity}combined_metrics_lists.csv
+```bash
+WTICRUDE,BRENTCRUDE,SOYBEANS,CORN,COPPER,SILVER,GOLD,ALUMINIUM,ZINC,NICKEL,WHEAT,SUGAR
+
+
 
 ## Installation
 
@@ -17,3 +21,4 @@ Ensure you have Python 3.6 or above installed. Then, install the required packag
 
 ```bash
 pip install numpy pandas matplotlib ripser persim giotto-tda
+

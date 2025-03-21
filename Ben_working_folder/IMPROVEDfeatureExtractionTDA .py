@@ -8,7 +8,8 @@ from scipy.stats import linregress
 
 df = pd.read_csv("commodity_futures.csv", parse_dates=["Date"])
 df.set_index("Date", inplace=True)
-commodity = 'BRENT CRUDE'
+commodity = 'SUGAR'
+#WTICRUDE,BRENTCRUDE,SOYBEANS,CORN,COPPER,SILVER,GOLD,ALUMINIUM,ZINC,NICKEL,WHEAT,SUGAR
 data = df[commodity].dropna().values
 tau = 1
 timeframe_length = 90  # quarterly window (90 days)
@@ -132,32 +133,32 @@ for window_start in range(max_start):
     results.append(window_dict)
 
 df_combined = pd.DataFrame(results)
-df_combined.to_csv("BRENTCRUDEcombined_metrics_lists.csv", index=False)
+df_combined.to_csv(f"{commodity}combined_metrics_lists.csv", index=False)
 
 #EXAMPLE
 
-df_combined_loaded = pd.read_csv("combined_metrics_lists.csv")
+# df_combined_loaded = pd.read_csv(f"{commodity}combined_metrics_lists.csv")
 
-window_to_plot = 5000
-window_df = df_combined_loaded[df_combined_loaded["window_start"] == window_to_plot]
+# window_to_plot = 5000
+# window_df = df_combined_loaded[df_combined_loaded["window_start"] == window_to_plot]
 
-if window_df.empty:
-    print(f"No window found with window_start = {window_to_plot}.")
-else:
-    print("Statistics for window_start =", window_to_plot)
-    print(window_df.transpose())
+# if window_df.empty:
+#     print(f"No window found with window_start = {window_to_plot}.")
+# else:
+#     print("Statistics for window_start =", window_to_plot)
+#     print(window_df.transpose())
     
-    filtration_H0 = ast.literal_eval(window_df["filtration_H0"].iloc[0])
-    betti_H0 = ast.literal_eval(window_df["betti_H0"].iloc[0])
-    filtration_H1 = ast.literal_eval(window_df["filtration_H1"].iloc[0])
-    betti_H1 = ast.literal_eval(window_df["betti_H1"].iloc[0])
+#     filtration_H0 = ast.literal_eval(window_df["filtration_H0"].iloc[0])
+#     betti_H0 = ast.literal_eval(window_df["betti_H0"].iloc[0])
+#     filtration_H1 = ast.literal_eval(window_df["filtration_H1"].iloc[0])
+#     betti_H1 = ast.literal_eval(window_df["betti_H1"].iloc[0])
     
-    plt.figure(figsize=(10, 5))
-    plt.plot(filtration_H0, betti_H0, label="H0 Betti Curve", color="blue", marker='o', markersize=3)
-    plt.plot(filtration_H1, betti_H1, label="H1 Betti Curve", color="red", marker='o', markersize=3)
-    plt.xlabel("Filtration Value")
-    plt.ylabel("Betti Number")
-    plt.title(f"Betti Curves for Window starting at {window_to_plot}")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+#     plt.figure(figsize=(10, 5))
+#     plt.plot(filtration_H0, betti_H0, label="H0 Betti Curve", color="blue", marker='o', markersize=3)
+#     plt.plot(filtration_H1, betti_H1, label="H1 Betti Curve", color="red", marker='o', markersize=3)
+#     plt.xlabel("Filtration Value")
+#     plt.ylabel("Betti Number")
+#     plt.title(f"Betti Curves for Window starting at {window_to_plot}")
+#     plt.legend()
+#     plt.grid(True)
+#     plt.show()
