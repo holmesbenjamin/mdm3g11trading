@@ -1,5 +1,5 @@
-import bootstrapPrices as bsp
-import traditionalFeatureExtraction as bfe
+import models.original_test_model.bootstrapPrices as bsp
+import models.original_test_model.traditionalFeatureExtraction as bfe
 import matplotlib.pyplot as plt
 from sklearn.model_selection import TimeSeriesSplit, GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
