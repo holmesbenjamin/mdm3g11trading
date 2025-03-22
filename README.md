@@ -32,5 +32,5 @@ rcParams.update({
 Ensure you have Python 3.6 or above installed. Then, install the required packages using pip:
 
 ```bash
-pip install numpy pandas matplotlib ripser persim giotto-tda
+pip install numpy pandas matplotlib ripser persim giotto-tda tsfresh
 
