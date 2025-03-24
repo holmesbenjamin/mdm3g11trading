@@ -7,6 +7,7 @@ from sklearn.model_selection import TimeSeriesSplit
 import sys, os, argparse
 from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 import ast
 from matplotlib import rcParams
 
@@ -20,6 +21,7 @@ rcParams.update({
     "figure.titlesize": 20,
     "axes.titlesize": 0,
 })
+
 cur_dir = os.getcwd()
 project_root = os.path.abspath(os.path.join(cur_dir, "."))
 if project_root not in sys.path:
@@ -31,7 +33,6 @@ if extraction_path not in sys.path:
 import featuresFromCSV
 
 def backtest_model(X, commodity_returns, clf, tss, mode):
-
     strategy_returns_list = []
     predictions_all = []
     for fold, (train_idx, test_idx) in enumerate(tss.split(X)):
@@ -42,7 +43,6 @@ def backtest_model(X, commodity_returns, clf, tss, mode):
 
         clf.fit(X_train, y_train)
         y_pred = clf.predict(X_test)
-
         predictions_all.append(pd.Series(y_pred, index=test_dates))
         
         if mode == "buy_hold":
@@ -92,7 +92,6 @@ def returns_to_prices(returns, initial_value=1):
 def plot_price_with_positions(price_series, signals, timeframe, mode, stage_name):
     plt.figure(figsize=(14, 7))
     plt.plot(price_series.index, price_series, label='Price', color='blue', lw=2)
-
     signal_dates = signals.index
 
     long_plotted = False
@@ -128,11 +127,62 @@ def plot_price_with_positions(price_series, signals, timeframe, mode, stage_name
     plt.grid(True)
     plt.show()
 
+def animate_monthly_signals(price_series, signals, stage_name, timeframe, start_date, end_date):
+    mask_price = (price_series.index >= start_date) & (price_series.index <= end_date)
+    mask_signals = (signals.index >= start_date) & (signals.index <= end_date)
+    price_series = price_series.loc[mask_price]
+    signals = signals.loc[mask_signals]
+
+    fig, ax = plt.subplots(figsize=(14, 7))
+    ax.plot(price_series.index, price_series, label='Price', color='black', lw=2)
+    ax.set_title(f"{stage_name} - {timeframe.capitalize()} Signals on Price (Animated)")
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Price")
+    ax.grid(True)
+    ax.legend()
+
+    signal_dates = signals.index.to_list()
+    signal_values = signals.values
+
+    def update(frame):
+        ax.collections.clear()  
+
+        current_dates = signal_dates[:frame + 1]
+        current_values = signal_values[:frame + 1]
+
+        long_dates = []
+        long_prices = []
+        short_dates = []
+        short_prices = []
+        for d, s in zip(current_dates, current_values):
+            if d in price_series.index:
+                if s > 0:
+                    long_dates.append(d)
+                    long_prices.append(price_series.loc[d])
+                elif s < 0:
+                    short_dates.append(d)
+                    short_prices.append(price_series.loc[d])
+        
+        if long_dates and long_prices:
+            ax.scatter(long_dates, long_prices, marker='^', color='green', s=100, label='Long')
+        if short_dates and short_prices:
+            ax.scatter(short_dates, short_prices, marker='v', color='red', s=100, label='Short')
+
+        handles, labels = ax.get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))
+        ax.legend(by_label.values(), by_label.keys())
+
+        return ax.collections
+
+    ani = animation.FuncAnimation(fig, update, frames=len(signal_dates), interval=500, blit=False, repeat=False)
+    plt.show()
+    return ani
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Backtest trading strategy with different signal modes and timeframes.")
-    parser.add_argument("--timeframe", choices=["daily", "monthly"], default="daily",
+    parser.add_argument("--timeframe", choices=["daily", "monthly"], default="monthly",
                         help="Timeframe for signals: daily or monthly.")
-    parser.add_argument("--mode", choices=["buy_hold", "buy_short"], default="buy_hold",
+    parser.add_argument("--mode", choices=["buy_hold", "buy_short"], default="buy_short",
                         help="Position mode: 'buy_hold' (only long or flat) or 'buy_short' (long and short).")
     return parser.parse_args()
 
@@ -142,43 +192,26 @@ def main():
     mode = args.mode
     print(f"Running backtest with timeframe: {timeframe}, mode: {mode}")
 
-    working_commodity = "WTI CRUDE"
-    csv_file = f"datasets/WTICRUDEcombined_metrics_lists.csv"
+    working_commodity = "GOLD"
+    csv_file = f"datasets/GOLDcombined_metrics_lists.csv"
 
-    stage1_df = featuresFromCSV.extract_stage_1(csv_file)
-    stage2_df = featuresFromCSV.extract_stage_2(csv_file)
-    stage3_df = featuresFromCSV.extract_stage_3(csv_file)
     stage4_df = featuresFromCSV.extract_stage_4(csv_file)
-    stages = {
-        "Stage 1": stage1_df,
-        "Stage 2": stage2_df,
-        "Stage 3": stage3_df,
-        "Stage 4": stage4_df
-    }
+    stages = {"Stage 4": stage4_df}
 
     commodity_px = close_price_extraction(working_commodity)
     commodity_returns = prices_to_returns(commodity_px).dropna()
 
     for stage in stages:
-        stages[stage] = handle_object_columns(stages[stage])
-
-    for stage in stages:
         df = stages[stage]
+        df = handle_object_columns(df)
         num_rows = len(df)
         df["window_start"] = commodity_px.index[:num_rows]
         stages[stage] = df
 
     tss = TimeSeriesSplit(n_splits=23)
     random_state = 42
-    svm_models = {
-        "Stage 1": SVC(kernel="linear", C=0.01, random_state=random_state),
-        "Stage 2": SVC(kernel="linear", C=0.01, random_state=random_state),
-        "Stage 3": SVC(kernel="linear", C=0.01, random_state=random_state),
-        "Stage 4": SVC(kernel="linear", C=0.01, random_state=random_state)
-    }
+    svm_models = {"Stage 4": SVC(kernel="linear", C=0.01, random_state=random_state)}
 
-    daily_equity_curves = {}
-    monthly_equity_curves = {}
     results = []
     print("Commodity returns range:", commodity_returns.index.min(), "to", commodity_returns.index.max())
 
@@ -186,54 +219,41 @@ def main():
         print(f"\n--- Training on {stage_name} ---")
         X = df.drop(columns=["window_start"])
         X.index = pd.to_datetime(df["window_start"])
-        y = np.sign(commodity_returns).dropna()
+        y = np.sign(commodity_returns).reindex(X.index).dropna()
 
         clf = make_pipeline(StandardScaler(), svm_models[stage_name])
-
         strategy_returns, predictions = backtest_model(X, commodity_returns, clf, tss, mode)
         predictions.index = pd.to_datetime(predictions.index)
 
-        if timeframe == "monthly":
-            if mode == "buy_hold":
-                monthly_signal = predictions.resample('ME').apply(
-                    lambda x: 1 if (x > 0).sum() > (x <= 0).sum() else 0
-                )
-            elif mode == "buy_short":
-                monthly_signal = predictions.resample('ME').apply(
-                    lambda x: 1 if (x > 0).sum() > (x <= 0).sum() else -1
-                )
-            monthly_log_returns = commodity_returns.resample('ME').sum().dropna()
-            common_index = monthly_signal.index.intersection(monthly_log_returns.index)
-            if common_index.empty:
-                print(f"No overlapping monthly dates for {stage_name}.")
-                equity_curve_monthly = pd.Series(dtype=float)
-            else:
-                strat_monthly = monthly_log_returns.loc[common_index] * monthly_signal.loc[common_index]
-                equity_curve_monthly = np.exp(strat_monthly.cumsum())
-                cumulative_return_monthly = equity_curve_monthly.iloc[-1] - 1
-                monthly_mean = strat_monthly.mean()
-                monthly_std = strat_monthly.std()
-                annualized_return_monthly = np.exp(12 * monthly_mean) - 1
-                annualized_sharpe_monthly = (monthly_mean / monthly_std) * np.sqrt(12) if monthly_std != 0 else np.nan
-                print(f"Monthly Backtest for {stage_name} - Cumulative Return: {cumulative_return_monthly:.2%}, " +
-                      f"Annualized Return: {annualized_return_monthly:.2%}, Annualized Sharpe: {annualized_sharpe_monthly:.2f}")
-            monthly_equity_curves[stage_name] = equity_curve_monthly * 1000
-            plot_signals = monthly_signal
-        else:
-            equity_curve_daily = np.exp(strategy_returns.cumsum())
-            cumulative_return_daily = equity_curve_daily.iloc[-1] - 1
-            daily_return = strategy_returns.mean()
-            daily_std = strategy_returns.std()
-            sharpe_ratio_daily = (daily_return / daily_std) * np.sqrt(252) if daily_std != 0 else np.nan
-            annualized_return_daily = np.exp(daily_return * 252) - 1
-            print(f"Daily Backtest for {stage_name} - Cumulative Return: {cumulative_return_daily:.2%}, " +
-                  f"Annualized Return: {annualized_return_daily:.2%}, Sharpe Ratio: {sharpe_ratio_daily:.2f}")
-            daily_equity_curves[stage_name] = equity_curve_daily * 1000
-            if mode == "buy_hold":
-                plot_signals = predictions[predictions > 0]
-            elif mode == "buy_short":
-                plot_signals = predictions  
+        monthly_signal = predictions.resample('ME').apply(
+            lambda x: 1 if (x > 0).sum() > (x <= 0).sum() else -1
+        )
         
+        monthly_log_returns = commodity_returns.resample('ME').sum().dropna()
+        common_index = monthly_signal.index.intersection(monthly_log_returns.index)
+        if common_index.empty:
+            print(f"No overlapping monthly dates for {stage_name}.")
+            equity_curve_monthly = pd.Series(dtype=float)
+        else:
+            strat_monthly = monthly_log_returns.loc[common_index] * monthly_signal.loc[common_index]
+            equity_curve_monthly = np.exp(strat_monthly.cumsum())
+            cumulative_return_monthly = equity_curve_monthly.iloc[-1] - 1
+            monthly_mean = strat_monthly.mean()
+            monthly_std = strat_monthly.std()
+            annualized_return_monthly = np.exp(12 * monthly_mean) - 1
+            annualized_sharpe_monthly = (monthly_mean / monthly_std) * np.sqrt(12) if monthly_std != 0 else np.nan
+            print(f"Monthly Backtest for {stage_name} - Cumulative Return: {cumulative_return_monthly:.2%}, " +
+                  f"Annualized Return: {annualized_return_monthly:.2%}, Annualized Sharpe: {annualized_sharpe_monthly:.2f}")
+        
+        equity_curve_monthly = equity_curve_monthly * 1000
+
+        plot_price_with_positions(commodity_px, monthly_signal, timeframe, mode, stage_name)
+
+        start_date = pd.to_datetime("2010-01-01")
+        end_date = pd.to_datetime("2015-12-31")
+        ani = animate_monthly_signals(commodity_px, monthly_signal, stage_name, timeframe, start_date, end_date)
+        #ani.save("monthly_signals.gif", writer="pillow", fps=2)
+
         f1_scores, accuracy_scores, precision_scores, recall_scores = [], [], [], []
         max_f1_scores, max_precision_scores = [], []
         for fold, (train_idx, test_idx) in enumerate(tss.split(X)):
@@ -261,35 +281,19 @@ def main():
         print(f"{stage_name} Mean Recall: {np.mean(recall_scores):.4f}")
         print(f"{stage_name} Max Precision: {np.max(max_precision_scores):.4f}")
 
-        plot_price_with_positions(commodity_px, plot_signals, timeframe, mode, stage_name)
-
     results_df = pd.DataFrame(results, columns=["Feature Stage", "Mean F1-Score", "Mean Accuracy", 
                                                   "Mean Precision", "Mean Recall", "Max F1-Score", "Max Precision"])
     print("\nFinal Results:")
     print(results_df)
 
-    for stage in daily_equity_curves.keys():
-        plt.figure(figsize=(10,6))
-        if timeframe == "daily" and not daily_equity_curves[stage].empty:
-            plt.plot(daily_equity_curves[stage].index, daily_equity_curves[stage].values, label="Daily Signals", color='blue')
-        elif timeframe == "monthly" and stage in monthly_equity_curves and not monthly_equity_curves[stage].empty:
-            plt.plot(monthly_equity_curves[stage].index, monthly_equity_curves[stage].values, label="Monthly Signals", color='orange')
-        plt.title(f"Portfolio Value for {stage}")
-        plt.xlabel("Date")
-        plt.ylabel("Portfolio Value (£)")
-        plt.legend()
-        plt.grid(True)
-        plt.show()
+    plt.figure(figsize=(10,6))
+    plt.plot(equity_curve_monthly.index, equity_curve_monthly.values, label="Monthly Signals", color='orange')
+    plt.title(f"Portfolio Value for Stage 4")
+    plt.xlabel("Date")
+    plt.ylabel("Portfolio Value (£)")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
 if __name__ == '__main__':
     main()
-
-
-
-# Dimension	Daily	Monthly
-# Buy & Hold	Signal: 1 when positive, 0 when negative.
-# Position: Only long or flat daily.	Signal: 1 if majority positive, 0 otherwise.
-# Position: Long for the month or flat.
-# Buy & Short	Signal: Use model output directly (+1 or –1).
-# Position: Long when positive, short when negative daily.	Signal: 1 if majority positive, –1 otherwise.
-# Position: Long for the month if mostly positive; short if mostly negative.
