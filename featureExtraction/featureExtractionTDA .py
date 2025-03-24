@@ -5,11 +5,9 @@ import matplotlib.pyplot as plt
 import ast  
 from scipy.stats import skew, kurtosis, linregress
 
-# Read the futures data, parsing dates and setting the Date column as index.
 df = pd.read_csv("datasets/commodity_futures.csv", parse_dates=["Date"])
 df.set_index("Date", inplace=True)
 
-# List of commodities to process
 commodities = ["SOYBEANS", "CORN", "COPPER", "SILVER", "GOLD", 
                "ALUMINIUM", "ZINC", "NICKEL", "WHEAT", "SUGAR"]
 
@@ -45,42 +43,34 @@ def process_diagram(diag):
     diag = diag[np.isfinite(diag).all(axis=1)]
     return diag
 
-# Loop over each commodity
 for commodity in commodities:
     print(f"Processing commodity: {commodity}")
     
-    # Check if commodity is in the dataframe columns
     if commodity not in df.columns:
         print(f"Commodity '{commodity}' not found in dataset. Skipping.")
         continue
 
-    # Get the series (prices) and corresponding dates for the commodity.
     series = df[commodity].dropna()
     data = series.values
     dates = series.index
 
-    # Determine the maximum starting index such that the entire window fits.
     max_start = len(data) - (timeframe_length + 2 * tau) + 1
 
     results = []
 
     for window_start in range(max_start):
-        # Use the date corresponding to the start of the window.
         window_start_date = dates[window_start]
         
-        # Build the 3-dimensional window using delays (tau, 2*tau)
         window_data = np.array([
             data[window_start:window_start + timeframe_length],
             data[window_start + tau:window_start + tau + timeframe_length],
             data[window_start + 2 * tau:window_start + 2 * tau + timeframe_length]
         ]).T
 
-        # Compute persistent homology using ripser.
         diagrams = ripser(window_data)['dgms']
         diag0 = process_diagram(diagrams[0])
         diag1 = process_diagram(diagrams[1])
 
-        # Compute Betti curves for H0
         if len(diag0) > 0:
             times_0 = np.linspace(diag0[:, 0].min(), diag0[:, 1].max(), resolutions)
             betti_curve_0 = np.zeros(resolutions)
@@ -90,7 +80,6 @@ for commodity in commodities:
             times_0 = np.linspace(0, 1, resolutions)
             betti_curve_0 = np.zeros(resolutions)
 
-        # Compute Betti curves for H1
         if len(diag1) > 0:
             times_1 = np.linspace(diag1[:, 0].min(), diag1[:, 1].max(), resolutions)
             betti_curve_1 = np.zeros(resolutions)
@@ -130,7 +119,7 @@ for commodity in commodities:
         momentum = window_data[-1, 0] - window_data[0, 0]
 
         window_dict = {
-            "window_start": window_start_date,  # store the actual date
+            "window_start": window_start_date,  
             "mean": window_mean,
             "median": window_median,
             "std": window_std,

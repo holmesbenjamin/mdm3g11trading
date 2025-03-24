@@ -20,6 +20,7 @@ rcParams.update({
     "figure.titlesize": 20,
     "axes.titlesize": 0,
 })
+
 cur_dir = os.getcwd()
 project_root = os.path.abspath(os.path.join(cur_dir, "."))
 if project_root not in sys.path:
@@ -30,19 +31,24 @@ if extraction_path not in sys.path:
 
 import featuresFromCSV
 
-def backtest_model(X, commodity_returns, clf, tss, mode):
-
+def backtest_model(X, target_returns, clf, tss, mode):
     strategy_returns_list = []
     predictions_all = []
     for fold, (train_idx, test_idx) in enumerate(tss.split(X)):
+        train_max = X.index[train_idx].max() + pd.Timedelta(days=90)
+        test_min = X.index[test_idx].min()
+        assert train_max <= test_min, (
+            f"Data leakage detected in fold {fold+1}: "
+            f"train window ends at {train_max} but test starts at {test_min}"
+        )
+        
         print(f"Back-testing fold {fold + 1}...")
         X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
-        y_train = np.sign(commodity_returns.iloc[train_idx])
+        y_train = np.sign(target_returns.loc[X_train.index])
         test_dates = X_test.index  
 
         clf.fit(X_train, y_train)
         y_pred = clf.predict(X_test)
-
         predictions_all.append(pd.Series(y_pred, index=test_dates))
         
         if mode == "buy_hold":
@@ -52,9 +58,10 @@ def backtest_model(X, commodity_returns, clf, tss, mode):
         else:
             raise ValueError("Unknown mode. Use 'buy_hold' or 'buy_short'.")
         
-        actual_returns = commodity_returns.iloc[test_idx]
+        actual_returns = target_returns.loc[X_test.index]
         strategy_returns = actual_returns * signal
         strategy_returns_list.append(strategy_returns)
+        
     strategy_returns_all = pd.concat(strategy_returns_list).sort_index()
     predictions_all = pd.concat(predictions_all).sort_index()
     return strategy_returns_all, predictions_all
@@ -77,7 +84,7 @@ def handle_object_columns(df):
 def close_price_extraction(working_commodity):
     datafile_path = os.path.join(project_root, "datasets", "commodity_futures.csv")
     df = pd.read_csv(datafile_path, header=0, index_col=0, thousands=",")
-    df.index = pd.to_datetime(df.index, format='mixed', dayfirst=True)
+    df.index = pd.to_datetime(df.index, dayfirst=True)
     df = df.sort_index()
     commodity_px = df[working_commodity].dropna()
     return commodity_px
@@ -92,12 +99,9 @@ def returns_to_prices(returns, initial_value=1):
 def plot_price_with_positions(price_series, signals, timeframe, mode, stage_name):
     plt.figure(figsize=(14, 7))
     plt.plot(price_series.index, price_series, label='Price', color='blue', lw=2)
-
     signal_dates = signals.index
-
     long_plotted = False
     short_plotted = False
-
     for date in signal_dates:
         if date not in price_series.index:
             continue
@@ -119,7 +123,6 @@ def plot_price_with_positions(price_series, signals, timeframe, mode, stage_name
                             marker='v', color='red', s=100,
                             label='Short' if not short_plotted else "")
                 short_plotted = True
-
     plt.title(f"{stage_name} - {timeframe.capitalize()} Signals on Price")
     plt.xticks(rotation=90)
     plt.xlabel("Date")
@@ -133,7 +136,7 @@ def parse_args():
     parser.add_argument("--timeframe", choices=["daily", "monthly"], default="daily",
                         help="Timeframe for signals: daily or monthly.")
     parser.add_argument("--mode", choices=["buy_hold", "buy_short"], default="buy_hold",
-                        help="Position mode: 'buy_hold' (only long or flat) or 'buy_short' (long and short).")
+                        help="Position mode: 'buy_hold' (only long/flat) or 'buy_short' (long/short).")
     return parser.parse_args()
 
 def main():
@@ -142,8 +145,8 @@ def main():
     mode = args.mode
     print(f"Running backtest with timeframe: {timeframe}, mode: {mode}")
 
-    working_commodity = "WTI CRUDE"
-    csv_file = f"datasets/WTICRUDEcombined_metrics_lists.csv"
+    working_commodity = "GOLD"
+    csv_file = f"datasets/{working_commodity}combined_metrics_lists.csv"
 
     stage1_df = featuresFromCSV.extract_stage_1(csv_file)
     stage2_df = featuresFromCSV.extract_stage_2(csv_file)
@@ -158,17 +161,19 @@ def main():
 
     commodity_px = close_price_extraction(working_commodity)
     commodity_returns = prices_to_returns(commodity_px).dropna()
+    print("Commodity returns range:", commodity_returns.index.min(), "to", commodity_returns.index.max())
 
     for stage in stages:
         stages[stage] = handle_object_columns(stages[stage])
-
-    for stage in stages:
         df = stages[stage]
         num_rows = len(df)
-        df["window_start"] = commodity_px.index[:num_rows]
+        df["window_start"] = commodity_px.index[1:1+num_rows]
+        df = df.sort_values("window_start")
         stages[stage] = df
 
-    tss = TimeSeriesSplit(n_splits=23)
+    target_returns = commodity_returns.reindex(pd.to_datetime(stages["Stage 1"]["window_start"], dayfirst=True))
+    
+    tss = TimeSeriesSplit(n_splits=23, gap=90)
     random_state = 42
     svm_models = {
         "Stage 1": SVC(kernel="linear", C=0.01, random_state=random_state),
@@ -180,18 +185,15 @@ def main():
     daily_equity_curves = {}
     monthly_equity_curves = {}
     results = []
-    print("Commodity returns range:", commodity_returns.index.min(), "to", commodity_returns.index.max())
 
     for stage_name, df in stages.items():
         print(f"\n--- Training on {stage_name} ---")
         X = df.drop(columns=["window_start"])
-        X.index = pd.to_datetime(df["window_start"])
-        y = np.sign(commodity_returns).dropna()
-
+        X.index = pd.to_datetime(df["window_start"], dayfirst=True)
+        aligned_returns = target_returns.reindex(X.index).dropna()
         clf = make_pipeline(StandardScaler(), svm_models[stage_name])
-
-        strategy_returns, predictions = backtest_model(X, commodity_returns, clf, tss, mode)
-        predictions.index = pd.to_datetime(predictions.index)
+        strategy_returns, predictions = backtest_model(X, aligned_returns, clf, tss, mode)
+        predictions.index = pd.to_datetime(predictions.index, dayfirst=True)
 
         if timeframe == "monthly":
             if mode == "buy_hold":
@@ -232,20 +234,20 @@ def main():
             if mode == "buy_hold":
                 plot_signals = predictions[predictions > 0]
             elif mode == "buy_short":
-                plot_signals = predictions  
+                plot_signals = predictions
         
         f1_scores, accuracy_scores, precision_scores, recall_scores = [], [], [], []
         max_f1_scores, max_precision_scores = [], []
         for fold, (train_idx, test_idx) in enumerate(tss.split(X)):
             print(f"Training fold {fold + 1} for {stage_name}...")
             X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
-            y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
-            clf.fit(X_train, y_train)
+            y_train, y_test = aligned_returns.loc[X_train.index], aligned_returns.loc[X_test.index]
+            clf.fit(X_train, np.sign(y_train))
             y_pred = clf.predict(X_test)
-            f1_scores.append(f1_score(y_test, y_pred, average="weighted"))
-            accuracy_scores.append(accuracy_score(y_test, y_pred))
-            precision_scores.append(precision_score(y_test, y_pred, average="weighted", zero_division=1))
-            recall_scores.append(recall_score(y_test, y_pred, average="weighted", zero_division=1))
+            f1_scores.append(f1_score(np.sign(y_test), y_pred, average="weighted"))
+            accuracy_scores.append(accuracy_score(np.sign(y_test), y_pred))
+            precision_scores.append(precision_score(np.sign(y_test), y_pred, average="weighted", zero_division=1))
+            recall_scores.append(recall_score(np.sign(y_test), y_pred, average="weighted", zero_division=1))
             max_f1_scores.append(f1_scores[-1])
             max_precision_scores.append(precision_scores[-1])
         results.append((stage_name,
@@ -283,13 +285,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-# Dimension	Daily	Monthly
-# Buy & Hold	Signal: 1 when positive, 0 when negative.
-# Position: Only long or flat daily.	Signal: 1 if majority positive, 0 otherwise.
-# Position: Long for the month or flat.
-# Buy & Short	Signal: Use model output directly (+1 or –1).
-# Position: Long when positive, short when negative daily.	Signal: 1 if majority positive, –1 otherwise.
-# Position: Long for the month if mostly positive; short if mostly negative.
