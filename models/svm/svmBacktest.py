@@ -68,8 +68,8 @@ def returns_to_prices(returns, initial_value=1):
     return np.exp(log_price)
 
 def main():
-    working_commodity = "GOLD"
-    csv_file = "datasets/GOLDcombined_metrics_lists.csv"
+    working_commodity = "SILVER"
+    csv_file = "datasets/SILVERcombined_metrics_lists.csv"
 
     # Extract features for each stage.
     stage1_df = extract_stage_1(csv_file)
