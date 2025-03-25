@@ -230,7 +230,7 @@ def main():
     print("\nFinal Summary of Backtest Metrics:")
     print(results_df)
 
-    output_file = os.path.join(project_root, "backtest_results_summary_all.csv")
+    output_file = os.path.join(project_root, "30day_LINEAR_backtest_results_summary_all.csv")
     results_df.to_csv(output_file, index=False)
     logging.info(f"Summary saved to {output_file}")
 
