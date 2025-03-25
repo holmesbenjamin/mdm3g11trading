@@ -114,7 +114,8 @@ def compute_buy_and_hold_return(prices):
 def main():
     timeframes = ['daily', 'monthly']
     modes = ['buy_hold', 'buy_short']
-    commodities = ["CORN", "SUGAR", "GOLD"]
+    # commodities = ["CORN", "SUGAR", "GOLD"]
+    commodities = ["GOLD", "SILVER" ,"SUGAR", "ZINC"]
     stages = ["Stage 1", "Stage 2", "Stage 3", "Stage 4"]
 
     stage_extractors = {
@@ -155,6 +156,7 @@ def main():
             y = np.sign(commodity_returns).reindex(X.index).dropna()
             X = X.loc[y.index]
 
+            #tss = TimeSeriesSplit(n_splits=15, gap=10)
             tss = TimeSeriesSplit(n_splits=23, gap=90)
             random_state = 42
             clf = make_pipeline(StandardScaler(), SVC(kernel="linear", C=0.01, random_state=random_state))
@@ -213,6 +215,7 @@ def main():
                         "Mode": mode,
                         "Mean F1-Score": np.mean(f1_scores),
                         "Mean Accuracy": np.mean(accuracy_scores),
+                        "Max Accuracy": np.max(accuracy_scores),
                         "Mean Precision": np.mean(precision_scores),
                         "Mean Recall": np.mean(recall_scores),
                         "Max F1-Score": np.max(f1_scores),
@@ -230,7 +233,7 @@ def main():
     print("\nFinal Summary of Backtest Metrics:")
     print(results_df)
 
-    output_file = os.path.join(project_root, "30day_LINEAR_backtest_results_summary_all.csv")
+    output_file = os.path.join(project_root, "FINALbacktest_results_summary_all.csv")
     results_df.to_csv(output_file, index=False)
     logging.info(f"Summary saved to {output_file}")
 
