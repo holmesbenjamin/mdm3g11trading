@@ -19,7 +19,7 @@ import os
 output_dir = "images/results"
 os.makedirs(output_dir, exist_ok=True)
 
-def load_data(csv_path="FINALbacktest_results_summary_all.csv"):
+def load_data(csv_path="datasets/results/FINALbacktest_results_summary_all.csv"):
     df = pd.read_csv(csv_path)
     return df
 
