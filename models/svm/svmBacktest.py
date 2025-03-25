@@ -4,8 +4,17 @@ from sklearn.svm import SVC
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import TimeSeriesSplit
+import sys,os
 from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score
-from featuresFromCSV import extract_stage_1, extract_stage_2, extract_stage_3, extract_stage_4
+cur_dir = os.getcwd()
+project_root = os.path.abspath(os.path.join(cur_dir, "."))
+if project_root not in sys.path:
+    sys.path.append(project_root)
+extraction_path = os.path.join(project_root, "featureExtraction")
+if extraction_path not in sys.path:
+    sys.path.append(extraction_path)
+
+import featuresFromCSV
 import ast
 import matplotlib.pyplot as plt
 
@@ -72,10 +81,10 @@ def main():
     csv_file = "datasets/SILVERcombined_metrics_lists.csv"
 
     # Extract features for each stage.
-    stage1_df = extract_stage_1(csv_file)
-    stage2_df = extract_stage_2(csv_file)
-    stage3_df = extract_stage_3(csv_file)
-    stage4_df = extract_stage_4(csv_file)
+    stage1_df = featuresFromCSV.extract_stage_1(csv_file)
+    stage2_df = featuresFromCSV.extract_stage_2(csv_file)
+    stage3_df = featuresFromCSV.extract_stage_3(csv_file)
+    stage4_df = featuresFromCSV.extract_stage_4(csv_file)
     stages = {
         "Stage 1": stage1_df,
         "Stage 2": stage2_df,
@@ -100,7 +109,7 @@ def main():
         stages[stage] = df
 
     # Set up TimeSeriesSplit.
-    tss = TimeSeriesSplit(n_splits=23)
+    tss = TimeSeriesSplit(n_splits=23, gap=90)
     random_state = 42
     svm_models = {
         "Stage 1": SVC(kernel="linear", C=0.01, random_state=random_state),

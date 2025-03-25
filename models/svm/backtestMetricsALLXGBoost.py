@@ -158,7 +158,7 @@ def main():
 
             tss = TimeSeriesSplit(n_splits=23, gap=90)
             random_state = 42
-            clf = make_pipeline(StandardScaler(), XGBClassifier(objective="binary:hinge", random_state=random_state))
+            clf = make_pipeline(StandardScaler(), XGBClassifier(objective="binary:hinge", random_state=random_state, ))
 
             for timeframe in timeframes:
                 for mode in modes:

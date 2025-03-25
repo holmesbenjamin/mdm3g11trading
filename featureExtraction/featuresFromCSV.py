@@ -3,14 +3,14 @@ import pandas as pd
 def extract_stage_1(csv_path):
     df = pd.read_csv(csv_path)
     stage1_columns = [
-        "window_start", "mean", "median", "std", "var", "min", "max", "range"
+        "window_end", "mean", "median", "std", "var", "min", "max", "range"
     ]
     return df[stage1_columns]
 
 def extract_stage_2(csv_path):
     df = pd.read_csv(csv_path)
     stage2_columns = [
-        "window_start", "mean", "median", "std", "var", "min", "max", "range", 
+        "window_end", "mean", "median", "std", "var", "min", "max", "range", 
         "trend_slope", "trend_intercept", "r_squared",
         "skew", "kurtosis", "dominant_freq", "spectral_entropy", "momentum"
     ]
@@ -19,7 +19,7 @@ def extract_stage_2(csv_path):
 def extract_stage_3(csv_path):
     df = pd.read_csv(csv_path)
     basic_columns = [
-        "window_start", "mean", "median", "std", "var", "min", "max", "range",
+        "window_end", "mean", "median", "std", "var", "min", "max", "range",
         "trend_slope", "trend_intercept", "r_squared", "skew", "kurtosis",
         "dominant_freq", "spectral_entropy", "momentum"
     ]
@@ -29,7 +29,7 @@ def extract_stage_3(csv_path):
 def extract_stage_4(csv_path):
     df = pd.read_csv(csv_path)
     basic_columns = [
-        "window_start", "mean", "median", "std", "var", "min", "max", "range",
+        "window_end", "mean", "median", "std", "var", "min", "max", "range",
         "trend_slope", "trend_intercept", "r_squared", "skew", "kurtosis",
         "dominant_freq", "spectral_entropy", "momentum"
     ]

@@ -40,13 +40,7 @@ def backtest_model(X, target_returns, clf, tss, mode):
     strategy_returns_list = []
     predictions_all = []
     for fold, (train_idx, test_idx) in enumerate(tss.split(X)):
-        train_max = X.index[train_idx].max() + pd.Timedelta(days=90)
-        test_min = X.index[test_idx].min()
-        assert train_max <= test_min, (
-            f"Data leakage detected in fold {fold+1}: "
-            f"train window ends at {train_max} but test starts at {test_min}"
-        )
-        
+        # Removed the 90-day gap check since features now use window_end (backward looking)
         print(f"Back-testing fold {fold + 1}...")
         X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
         y_train = np.sign(target_returns.loc[X_train.index])
@@ -70,7 +64,6 @@ def backtest_model(X, target_returns, clf, tss, mode):
     strategy_returns_all = pd.concat(strategy_returns_list).sort_index()
     predictions_all = pd.concat(predictions_all).sort_index()
     return strategy_returns_all, predictions_all
-
 
 
 def handle_object_columns(df):
@@ -114,7 +107,6 @@ def compute_buy_and_hold_return(prices):
 def main():
     timeframes = ['daily', 'monthly']
     modes = ['buy_hold', 'buy_short']
-    # commodities = ["CORN", "SUGAR", "GOLD"]
     commodities = ["GOLD", "SILVER" ,"SUGAR", "ZINC"]
     stages = ["Stage 1", "Stage 2", "Stage 3", "Stage 4"]
 
@@ -141,7 +133,7 @@ def main():
 
         for stage in stages:
             logging.info(f"  Processing {stage} for {commodity}")
-            csv_file = os.path.join(project_root, "datasets", f"{commodity.upper()}combined_metrics_lists.csv")
+            csv_file = os.path.join(project_root, "datasets", f"B{commodity.upper()}combined_metrics_lists.csv")
             try:
                 stage_df = stage_extractors[stage](csv_file)
             except Exception as e:
@@ -150,14 +142,15 @@ def main():
 
             stage_df = handle_object_columns(stage_df)
             num_rows = len(stage_df)
-            stage_df["window_start"] = commodity_px.index[:num_rows]
-            X = stage_df.drop(columns=["window_start"])
-            X.index = pd.to_datetime(stage_df["window_start"])
+            # Use the 'window_end' column from the CSV as the date index
+            stage_df["window_end"] = pd.to_datetime(stage_df["window_end"], dayfirst=True)
+            X = stage_df.drop(columns=["window_end"])
+            X.index = stage_df["window_end"]
             y = np.sign(commodity_returns).reindex(X.index).dropna()
             X = X.loc[y.index]
 
-            #tss = TimeSeriesSplit(n_splits=15, gap=10)
-            tss = TimeSeriesSplit(n_splits=23, gap=90)
+            # Remove gap parameter since we don't need a 90-day gap anymore
+            tss = TimeSeriesSplit(n_splits=23)
             random_state = 42
             clf = make_pipeline(StandardScaler(), SVC(kernel="linear", C=0.01, random_state=random_state))
 
