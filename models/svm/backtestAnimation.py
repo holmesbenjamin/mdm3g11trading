@@ -172,7 +172,7 @@ def animate_daily_signals(price_series, signals, stage_name, start_date, end_dat
         ax.set_ylim(full_y_min, full_y_max)
         
         x_end = mdates.date2num(current_time)
-        x_start = mdates.date2num(current_time - pd.DateOffset(months=1))
+        x_start = mdates.date2num(current_time - pd.DateOffset(months=3))
         rect = Rectangle((x_start, full_y_min), x_end - x_start, full_y_max - full_y_min,
                          facecolor='yellow', alpha=0.2, zorder=0)
         ax.add_patch(rect)
@@ -203,7 +203,7 @@ def animate_daily_signals(price_series, signals, stage_name, start_date, end_dat
 def main():
     commodity = "GOLD"
     stage = "Stage 3"
-    timeframe = "monthly"   
+    timeframe = "daily"   
     mode = "buy_short"      
     logging.info(f"Animating {commodity} {stage} {timeframe} {mode}...")
 
@@ -237,7 +237,7 @@ def main():
     
     ani = animate_daily_signals(commodity_px, daily_signals, f"{commodity} {stage}", start_date, end_date)
     
-    # ani.save("gold_stage3_monthly_buy_short.gif", writer="pillow", fps=5)
+    ani.save("images/results/gold_stage3_daily_buy_short.gif", writer="pillow", fps=5)
 
 if __name__ == '__main__':
     main()
