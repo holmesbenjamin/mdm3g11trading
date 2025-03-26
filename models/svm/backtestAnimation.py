@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import matplotlib.dates as mdates
+from matplotlib.patches import Rectangle
 from sklearn.svm import SVC
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -100,10 +101,15 @@ def animate_daily_signals(price_series, signals, stage_name, start_date, end_dat
     signals = signals.loc[mask_signals]
 
     fig, ax = plt.subplots(figsize=(14, 7))
-    ax.set_title(f"{stage_name} - Daily Buy & Hold Signals on Price (Animated)")
+    ax.set_title(f"{stage_name} - Daily Signals on Price (Animated)")
     ax.set_xlabel("Date")
     ax.set_ylabel("Price")
     ax.grid(True)
+
+    ax.set_xlim(start_date, end_date)
+    full_y_min = price_series.min()
+    full_y_max = price_series.max()
+    ax.set_ylim(full_y_min, full_y_max)
 
     signal_dates = signals.index.to_list()
     signal_values = signals.values
@@ -111,17 +117,27 @@ def animate_daily_signals(price_series, signals, stage_name, start_date, end_dat
     price_line, = ax.plot([], [], label='Price', color='black', lw=2)
     long_scatter = ax.scatter([], [], marker='^', color='green', s=100, label='Long')
     short_scatter = ax.scatter([], [], marker='v', color='red', s=100, label='Short')
+    
+    profit_text = ax.text(0.98, 0.02, '', transform=ax.transAxes, fontsize=16,
+                      verticalalignment='bottom', horizontalalignment='right',
+                      bbox=dict(facecolor='white', alpha=0.5))
 
     ax.xaxis_date()
     fig.autofmt_xdate()
+
+    initial_investment = 1000
 
     def init():
         price_line.set_data([], [])
         long_scatter.set_offsets(np.empty((0, 2)))
         short_scatter.set_offsets(np.empty((0, 2)))
-        return price_line, long_scatter, short_scatter
+        profit_text.set_text('')
+        return price_line, long_scatter, short_scatter, profit_text
 
     def update(frame):
+        for patch in ax.patches:
+            patch.remove()
+            
         current_time = signal_dates[frame]
         current_mask = price_series.index <= current_time
         current_dates = price_series.index[current_mask]
@@ -140,7 +156,7 @@ def animate_daily_signals(price_series, signals, stage_name, start_date, end_dat
                 elif s == -1:
                     short_dates.append(d)
                     short_prices.append(price_series.loc[d])
-
+        
         if long_dates:
             long_xy = np.column_stack((mdates.date2num(long_dates), long_prices))
             long_scatter.set_offsets(long_xy)
@@ -152,14 +168,32 @@ def animate_daily_signals(price_series, signals, stage_name, start_date, end_dat
         else:
             short_scatter.set_offsets(np.empty((0, 2)))
 
+        ax.set_xlim(start_date, end_date)
+        ax.set_ylim(full_y_min, full_y_max)
+        
+        x_end = mdates.date2num(current_time)
+        x_start = mdates.date2num(current_time - pd.DateOffset(months=1))
+        rect = Rectangle((x_start, full_y_min), x_end - x_start, full_y_max - full_y_min,
+                         facecolor='yellow', alpha=0.2, zorder=0)
+        ax.add_patch(rect)
+
+        current_prices_series = price_series[current_mask]
+        daily_returns = np.log(current_prices_series / current_prices_series.shift(1)).dropna()
+        current_signals = signals.reindex(daily_returns.index, method='ffill')
+        strat_returns = daily_returns * current_signals
+        if not strat_returns.empty:
+            equity_curve = np.exp(strat_returns.cumsum())
+            current_value = initial_investment * equity_curve.iloc[-1]
+            profit = current_value - initial_investment
+            profit_text.set_text(f"Portfolio Value: £{current_value:.2f}\nProfit: £{profit:.2f}")
+        else:
+            profit_text.set_text("")
+
         handles, labels = ax.get_legend_handles_labels()
         by_label = dict(zip(labels, handles))
         ax.legend(by_label.values(), by_label.keys())
 
-        ax.relim()
-        ax.autoscale_view()
-
-        return price_line, long_scatter, short_scatter
+        return price_line, long_scatter, short_scatter, rect, profit_text
 
     ani = animation.FuncAnimation(fig, update, frames=len(signal_dates),
                                   init_func=init, interval=300, blit=False, repeat=False)
@@ -171,7 +205,6 @@ def main():
     stage = "Stage 3"
     timeframe = "monthly"   
     mode = "buy_short"      
-
     logging.info(f"Animating {commodity} {stage} {timeframe} {mode}...")
 
     commodity_px = close_price_extraction(commodity)
@@ -199,8 +232,8 @@ def main():
     strategy_returns, predictions = backtest_model(X, commodity_returns, clf, tss, mode)
     daily_signals = predictions.apply(lambda x: 1 if x > 0 else -1)
     
-    start_date = pd.to_datetime("2010-01-01")
-    end_date = pd.to_datetime("2015-12-31")
+    start_date = pd.to_datetime("2011-01-01")
+    end_date = pd.to_datetime("2011-10-15")
     
     ani = animate_daily_signals(commodity_px, daily_signals, f"{commodity} {stage}", start_date, end_date)
     
